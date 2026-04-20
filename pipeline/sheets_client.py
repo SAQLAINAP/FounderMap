@@ -1,6 +1,8 @@
 import os
 import json
+import time
 import gspread
+from gspread.exceptions import APIError
 from oauth2client.service_account import ServiceAccountCredentials
 
 SCOPES = [
@@ -34,30 +36,40 @@ def get_client():
     return gspread.authorize(creds)
 
 
+def _retry(fn, retries=5):
+    for attempt in range(retries):
+        try:
+            return fn()
+        except APIError as e:
+            if e.response.status_code == 429 and attempt < retries - 1:
+                time.sleep(2 ** attempt * 10)  # 10s, 20s, 40s, 80s
+            else:
+                raise
+
+
 def get_sheet(tab_name: str):
     client = get_client()
-    return client.open(SHEET_NAME).worksheet(tab_name)
+    return _retry(lambda: client.open(SHEET_NAME).worksheet(tab_name))
 
 
 def get_existing_urls(tab_name: str = TAB_APPROVED) -> set:
     sheet = get_sheet(tab_name)
-    # URL is the 3rd column (index 2, 1-based col 3)
-    urls = sheet.col_values(3)
+    urls = _retry(lambda: sheet.col_values(3))
     return set(urls[1:])  # skip header row
 
 
 def append_approved_row(row: dict):
     sheet = get_sheet(TAB_APPROVED)
     values = [str(row.get(col, "")) for col in APPROVED_HEADERS]
-    sheet.append_row(values, value_input_option="USER_ENTERED")
+    _retry(lambda: sheet.append_row(values, value_input_option="USER_ENTERED"))
 
 
 def append_raw_row(row: dict):
     sheet = get_sheet(TAB_RAW)
-    sheet.append_row([
+    _retry(lambda: sheet.append_row([
         row.get("title", ""),
         row.get("url", ""),
         row.get("source", ""),
         row.get("date", ""),
         "pending",
-    ], value_input_option="USER_ENTERED")
+    ], value_input_option="USER_ENTERED"))

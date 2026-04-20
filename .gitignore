@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+pipeline/creds.json
+pipeline/.env
+pipeline/venv/
+.env
+.env.local
+# Google service account keys — NEVER commit these
+*.json
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/tsconfig.json
+.claude/
+
+# Next.js
+frontend/.next/
+frontend/node_modules/
+frontend/.env.local
+
+# Misc
+.DS_Store

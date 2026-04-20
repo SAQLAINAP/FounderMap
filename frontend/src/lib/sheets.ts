@@ -3,7 +3,7 @@ export type Opportunity = {
   name: string
   url: string
   type: "Accelerator" | "Grant" | "Fellowship" | "Incubator" | "Competition" | "Other"
-  stage: "Idea" | "MVP" | "Revenue" | "Any"
+  stage: "Idea" | "MVP" | "Revenue" | "Any" | "Unknown" | (string & {})
   geography: string
   equity: string
   domain: string
